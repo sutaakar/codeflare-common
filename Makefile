@@ -30,6 +30,12 @@ defaults:
 
 	gofmt -w $(DEFAULTS_TEST_FILE)
 
+## Tool Binaries
+CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
+
+## Tool Versions
+CONTROLLER_TOOLS_VERSION ?= v0.9.2
+
 
 ## Location to install dependencies to
 LOCALBIN ?= $(shell pwd)/bin
@@ -50,3 +56,12 @@ imports: openshift-goimports ## Organize imports in go files using openshift-goi
 .PHONY: verify-imports
 verify-imports: openshift-goimports ## Run import verifications.
 	./hack/verify-imports.sh $(OPENSHIFT-GOIMPORTS)
+
+.PHONY: controller-gen
+controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
+$(CONTROLLER_GEN): $(LOCALBIN)
+	test -s $(LOCALBIN)/controller-gen || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
+
+.PHONY: manifests
+manifests: controller-gen ## Generate RBAC objects.
+	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook paths="./..."
