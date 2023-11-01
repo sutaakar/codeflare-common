@@ -23,11 +23,14 @@ import (
 	"github.com/onsi/gomega"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func CreateConfigMap(t Test, namespace string, content map[string][]byte) *corev1.ConfigMap {
+	t.T().Helper()
+
 	configMap := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
@@ -98,7 +101,10 @@ func storeContainerLog(t Test, namespace *corev1.Namespace, podName, containerNa
 
 	options := corev1.PodLogOptions{Container: containerName}
 	stream, err := t.Client().Core().CoreV1().Pods(namespace.Name).GetLogs(podName, &options).Stream(t.Ctx())
-	t.Expect(err).NotTo(gomega.HaveOccurred())
+	if err != nil {
+		t.T().Logf("Failed to retrieve logs for Pod Container %s/%s/%s, logs cannot be stored", namespace.Name, podName, containerName)
+		return
+	}
 
 	defer func() {
 		t.Expect(stream.Close()).To(gomega.Succeed())
@@ -109,4 +115,52 @@ func storeContainerLog(t Test, namespace *corev1.Namespace, podName, containerNa
 
 	containerLogFileName := "pod-" + podName + "-" + containerName
 	WriteToOutputDir(t, containerLogFileName, Log, bytes)
+}
+
+func CreateServiceAccount(t Test, namespace string) *corev1.ServiceAccount {
+	t.T().Helper()
+
+	serviceAccount := &corev1.ServiceAccount{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "ServiceAccount",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "sa-",
+			Namespace:    namespace,
+		},
+	}
+	serviceAccount, err := t.Client().Core().CoreV1().ServiceAccounts(namespace).Create(t.Ctx(), serviceAccount, metav1.CreateOptions{})
+	t.Expect(err).NotTo(gomega.HaveOccurred())
+	t.T().Logf("Created ServiceAccount %s/%s successfully", serviceAccount.Namespace, serviceAccount.Name)
+
+	return serviceAccount
+}
+
+func CreatePersistentVolumeClaim(t Test, namespace string, storageSize string, accessMode ...corev1.PersistentVolumeAccessMode) *corev1.PersistentVolumeClaim {
+	t.T().Helper()
+
+	pvc := &corev1.PersistentVolumeClaim{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "PersistentVolumeClaim",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "pvc-",
+			Namespace:    namespace,
+		},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			AccessModes: accessMode,
+			Resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceStorage: resource.MustParse(storageSize),
+				},
+			},
+		},
+	}
+	pvc, err := t.Client().Core().CoreV1().PersistentVolumeClaims(namespace).Create(t.Ctx(), pvc, metav1.CreateOptions{})
+	t.Expect(err).NotTo(gomega.HaveOccurred())
+	t.T().Logf("Created PersistentVolumeClaim %s/%s successfully", pvc.Namespace, pvc.Name)
+
+	return pvc
 }
