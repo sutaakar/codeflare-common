@@ -164,3 +164,23 @@ func CreatePersistentVolumeClaim(t Test, namespace string, storageSize string, a
 
 	return pvc
 }
+
+func GetNodes(t Test) []corev1.Node {
+	t.T().Helper()
+	nodes, err := t.Client().Core().CoreV1().Nodes().List(t.Ctx(), metav1.ListOptions{})
+	t.Expect(err).NotTo(gomega.HaveOccurred())
+	return nodes.Items
+}
+
+func GetNodeInternalIP(t Test, node corev1.Node) (IP string) {
+	t.T().Helper()
+
+	for _, address := range node.Status.Addresses {
+		if address.Type == "InternalIP" {
+			IP = address.Address
+		}
+	}
+	t.Expect(IP).Should(gomega.Not(gomega.BeEmpty()), "Node internal IP address not found")
+
+	return
+}

@@ -41,6 +41,9 @@ const (
 
 	// Type of cluster test is run on
 	ClusterTypeEnvVar = "CLUSTER_TYPE"
+
+	// Hostname of the Kubernetes cluster
+	ClusterHostname = "CLUSTER_HOSTNAME"
 )
 
 type ClusterType string
@@ -49,6 +52,7 @@ const (
 	OsdCluster        ClusterType = "OSD"
 	OcpCluster        ClusterType = "OCP"
 	HypershiftCluster ClusterType = "HYPERSHIFT"
+	KindCluster       ClusterType = "KIND"
 	UndefinedCluster  ClusterType = "UNDEFINED"
 )
 
@@ -90,10 +94,20 @@ func GetClusterType(t Test) ClusterType {
 		return OcpCluster
 	case "HYPERSHIFT":
 		return HypershiftCluster
+	case "KIND":
+		return KindCluster
 	default:
 		t.T().Logf("Expected environment variable %s contains unexpected value: '%s'", ClusterTypeEnvVar, clusterType)
 		return UndefinedCluster
 	}
+}
+
+func GetClusterHostname(t Test) string {
+	hostname, ok := os.LookupEnv(ClusterHostname)
+	if !ok {
+		t.T().Fatalf("Expected environment variable %s not found, please define cluster hostname.", ClusterHostname)
+	}
+	return hostname
 }
 
 func lookupEnvOrDefault(key, value string) string {
