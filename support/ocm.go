@@ -72,3 +72,7 @@ func GetMachinePools(t Test, connection *ocmsdk.Connection) []*cmv1.MachinePool 
 func MachinePoolId(machinePool *cmv1.MachinePool) string {
 	return machinePool.ID()
 }
+
+func MachinePoolLabels(machinePool *cmv1.MachinePool) map[string]string {
+	return machinePool.Labels()
+}
