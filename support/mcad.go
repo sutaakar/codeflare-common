@@ -32,6 +32,11 @@ func AppWrapper(t Test, namespace *corev1.Namespace, name string) func(g gomega.
 	}
 }
 
+func GetAppWrapper(t Test, namespace *corev1.Namespace, name string) *mcadv1beta1.AppWrapper {
+	t.T().Helper()
+	return AppWrapper(t, namespace, name)(t)
+}
+
 func AppWrappers(t Test, namespace *corev1.Namespace) func(g gomega.Gomega) []*mcadv1beta1.AppWrapper {
 	return func(g gomega.Gomega) []*mcadv1beta1.AppWrapper {
 		aws, err := t.Client().MCAD().WorkloadV1beta1().AppWrappers(namespace.Name).List(t.Ctx(), metav1.ListOptions{})
