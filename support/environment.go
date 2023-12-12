@@ -37,7 +37,7 @@ const (
 	InstaScaleOcmSecret = "INSTASCALE_OCM_SECRET"
 
 	// Cluster ID for OSD cluster used in tests, used for testing InstaScale
-	OsdClusterID = "CLUSTERID"
+	ClusterID = "CLUSTERID"
 
 	// Type of cluster test is run on
 	ClusterTypeEnvVar = "CLUSTER_TYPE"
@@ -77,8 +77,8 @@ func GetInstascaleOcmSecret() (string, string) {
 	return res[0], res[1]
 }
 
-func GetOsdClusterId() (string, bool) {
-	return os.LookupEnv(OsdClusterID)
+func GetClusterId() (string, bool) {
+	return os.LookupEnv(ClusterID)
 }
 
 func GetClusterType(t Test) ClusterType {

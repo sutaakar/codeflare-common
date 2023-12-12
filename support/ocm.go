@@ -54,7 +54,7 @@ func buildOCMConnection(secret string) (*ocmsdk.Connection, error) {
 }
 
 func MachinePools(t Test, connection *ocmsdk.Connection) func(g gomega.Gomega) []*cmv1.MachinePool {
-	osdClusterId, found := GetOsdClusterId()
+	osdClusterId, found := GetClusterId()
 	t.Expect(found).To(gomega.BeTrue(), "OSD cluster id not found, please configure environment properly")
 
 	return func(g gomega.Gomega) []*cmv1.MachinePool {
@@ -75,4 +75,24 @@ func MachinePoolId(machinePool *cmv1.MachinePool) string {
 
 func MachinePoolLabels(machinePool *cmv1.MachinePool) map[string]string {
 	return machinePool.Labels()
+}
+
+func NodePools(t Test, connection *ocmsdk.Connection) func(g gomega.Gomega) []*cmv1.NodePool {
+	clusterId, found := GetClusterId()
+	t.Expect(found).To(gomega.BeTrue(), "Cluster id not found, please configure environment properly")
+
+	return func(g gomega.Gomega) []*cmv1.NodePool {
+		nodePoolsListResponse, err := connection.ClustersMgmt().V1().Clusters().Cluster(clusterId).NodePools().List().Send()
+		g.Expect(err).NotTo(gomega.HaveOccurred())
+		return nodePoolsListResponse.Items().Slice()
+	}
+}
+
+func GetNodePools(t Test, connection *ocmsdk.Connection) []*cmv1.NodePool {
+	t.T().Helper()
+	return NodePools(t, connection)(t)
+}
+
+func NodePoolLabels(nodePool *cmv1.NodePool) map[string]string {
+	return nodePool.Labels()
 }
