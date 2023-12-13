@@ -76,9 +76,12 @@ func ExposeServiceByRoute(t Test, name string, namespace string, serviceName str
 	hostname := r.Status.Ingress[0].Host
 
 	// Wait for expected HTTP code
-	t.Eventually(func() int {
-		resp, _ := http.Get("http://" + hostname)
-		return resp.StatusCode
+	t.Eventually(func() (int, error) {
+		resp, err := http.Get("http://" + hostname)
+		if err != nil {
+			return -1, err
+		}
+		return resp.StatusCode, nil
 	}, TestTimeoutLong).Should(gomega.Not(gomega.Equal(503)))
 
 	r = GetRoute(t, r.Namespace, r.Name)
