@@ -2,10 +2,14 @@ name: "Set up KinD"
 description: "Step to start and configure KinD cluster"
 
 inputs:
-  kind-node-hostname:
+  node-hostname:
     description: "Hostname of the main kind node"
     required: false
     default: kind
+  cluster-name:
+    description: "Name of the KinD cluster"
+    required: false
+    default: cluster
 
 runs:
   using: "composite"
@@ -43,7 +47,7 @@ runs:
     - name: Setup KinD cluster
       uses: helm/kind-action@v1.8.0
       with:
-        cluster_name: cluster
+        cluster_name: ${{ inputs.cluster-name }}
         version: v0.17.0
         config: ${{ env.KIND_CONFIG_FILE }}
 
@@ -63,12 +67,12 @@ runs:
         kubectl annotate ingressclass nginx "ingressclass.kubernetes.io/is-default-class=true"
         kubectl -n ingress-nginx wait --timeout=300s --for=condition=Available deployments --all
 
-    - name: Add ${{ inputs.kind-node-hostname }} host to machine hosts
+    - name: Add ${{ inputs.node-hostname }} host to machine hosts
       shell: bash
-      run: echo "127.0.0.1 ${{ inputs.kind-node-hostname }}" | sudo tee -a /etc/hosts
+      run: echo "127.0.0.1 ${{ inputs.node-hostname }}" | sudo tee -a /etc/hosts
 
     - name: Set env variables for tests to properly leverage KinD cluster
       shell: bash
       run: |
         echo "CLUSTER_TYPE=KIND" >> $GITHUB_ENV
-        echo "CLUSTER_HOSTNAME=${{ inputs.kind-node-hostname }}" >> $GITHUB_ENV
+        echo "CLUSTER_HOSTNAME=${{ inputs.node-hostname }}" >> $GITHUB_ENV
