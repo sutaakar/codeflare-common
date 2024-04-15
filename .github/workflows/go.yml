@@ -1,0 +1,34 @@
+name: Go
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Build
+      run: |
+        sudo apt-get install dnsmasq
+
+        sudo sed -i -E "s/#DNS=/DNS=127.0.0.2/" /etc/systemd/resolved.conf
+        sudo sed -i -E "s/#Domains=/Domains=~kind/" /etc/systemd/resolved.conf
+        sudo systemctl restart systemd-resolved
+
+        sudo sed -i -E "s/#IGNORE_RESOLVCONF=yes/IGNORE_RESOLVCONF=yes/" /etc/default/dnsmasq
+        sudo sed -i -E "s/#listen-address=/listen-address=127.0.0.2/" /etc/dnsmasq.conf
+        sudo sed -i -E "s/#bind-interfaces/bind-interfaces/" /etc/dnsmasq.conf
+        sudo sed -i -E "s|#(address=).*|\1/kind/127.0.0.1|" /etc/dnsmasq.conf
+        sudo systemctl stop dnsmasq
+        sudo systemctl start dnsmasq
+        systemctl status dnsmasq
+
+        # curl -v http://api.kind:80
+        curl -v http://api.kindx:80
+        
